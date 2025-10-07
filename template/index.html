@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Telegram Caller</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div id="app-container">
+        <!-- ЭКРАН ДЛЯ ОБЫЧНОГО РЕЖИМА MINI APP -->
+        <div id="main-screen" class="screen">
+            <div class="header">
+                <p id="connection-status">Подключение...</p>
+            </div>
+
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="contacts">Контакты</button>
+                <button class="tab-btn" data-tab="history">Вызовы</button>
+            </div>
+
+            <div class="tab-content">
+                <div id="contacts-pane" class="tab-pane active">
+                    <div id="user-list" class="user-list"></div>
+                </div>
+                <div id="history-pane" class="tab-pane">
+                    <div id="call-history-list" class="call-history-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ЭКРАН ДЛЯ РЕЖИМА ПРИВАТНОГО ЗВОНКА -->
+        <div id="private-call-screen" class="screen">
+            <div class="private-call-container">
+                <h2 id="private-call-status-title">Приватный звонок</h2>
+                <p id="private-call-status-text">Ожидание подключения собеседника...</p>
+                <div id="private-call-buttons-container" class="call-buttons-container" style="display: none;">
+                     <button class="call-btn-list audio" data-call-type="audio">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.02.74-.25 1.02l-2.2 2.2z"/></svg>
+                    </button>
+                    <button class="call-btn-list video" data-call-type="video">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ОБЩИЙ ЭКРАН ЗВОНКА (ДЛЯ ОБОИХ РЕЖИМОВ) -->
+        <div id="call-screen" class="screen">
+            <video id="remoteVideo" autoplay playsinline></video>
+            <video id="localVideo" autoplay muted playsinline></video>
+
+            <div class="call-ui-overlay">
+                <div class="caller-info-top">
+                    <h2 id="remote-user-name">Имя пользователя</h2>
+                    <p id="call-timer">00:00</p>
+                </div>
+
+                <div class="controls-wrapper">
+                    <div class="call-controls-grid">
+                        <div class="control-item">
+                            <button id="mute-btn" class="control-btn">
+                                <span class="icon-on">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="4" y1="23" x2="20" y2="23"></line></svg>
+                                </span>
+                                <span class="icon-off">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                                </span>
+                            </button>
+                            <span>Микрофон</span>
+                        </div>
+                        <div class="control-item" id="video-control-item">
+                            <button id="video-btn" class="control-btn">
+                                <span class="icon-on">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="2" y="5" width="14" height="14" rx="2" ry="2"></rect></svg>
+                                </span>
+                                <span class="icon-off">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2l4 4-4 4v1"></path><line x1="2" y1="2" x2="22" y2="22"></line><path d="m22 7-5 5 5 5V7z"></path></svg>
+                                </span>
+                            </button>
+                            <span>Камера</span>
+                        </div>
+                        <div class="control-item">
+                            <button id="speaker-btn" class="control-btn">
+                                <span class="icon-on">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                                </span>
+                                <span class="icon-off">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+                                </span>
+                            </button>
+                            <span>Динамик</span>
+                        </div>
+                    </div>
+
+                    <div class="hangup-wrapper">
+                        <button id="hangup-btn" class="hangup-btn">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.64 2.28L2.36 3.55L6.32 7.51C6.11 7.83 6 8.19 6 8.57V15.42C6 16.5 6.67 17.41 7.59 17.82L10.13 20.36C10.31 20.54 10.56 20.64 10.81 20.64C11.06 20.64 11.31 20.54 11.49 20.36L12.55 19.3L14.24 21L15.5 19.75L3.64 2.28ZM10.81 18.95L8.28 16.41C8.11 16.24 8 16 8 15.75V9.28L13.23 14.5L11.88 15.85C11.52 16.21 11.29 16.68 11.2 17.19L10.91 18.64C10.87 18.83 10.72 18.95 10.53 18.95H10.81Z M17.36 14.36L19.43 16.43L20.7 15.16L17.36 11.82V14.36ZM17.36 5V10.1L15.36 8.1V5H17.36Z M13.36 2H11.36V4H13.36V2Z M9.36 2H7.36V4H9.36V2Z M5.36 2H3.36V4H5.36V2Z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="incoming-call-modal" class="modal">
+        <div class="modal-content">
+            <div class="caller-info-modal">
+                <h3 id="caller-name">Вам звонит...</h3>
+                <p id="incoming-call-type">Telegram Call</p>
+            </div>
+            <div class="modal-buttons">
+                <div class="action-button-wrapper">
+                    <button id="decline-btn" class="action-btn decline-btn">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.64 2.28L2.36 3.55L6.32 7.51C6.11 7.83 6 8.19 6 8.57V15.42C6 16.5 6.67 17.41 7.59 17.82L10.13 20.36C10.31 20.54 10.56 20.64 10.81 20.64C11.06 20.64 11.31 20.54 11.49 20.36L12.55 19.3L14.24 21L15.5 19.75L3.64 2.28ZM10.81 18.95L8.28 16.41C8.11 16.24 8 16 8 15.75V9.28L13.23 14.5L11.88 15.85C11.52 16.21 11.29 16.68 11.2 17.19L10.91 18.64C10.87 18.83 10.72 18.95 10.53 18.95H10.81Z M17.36 14.36L19.43 16.43L20.7 15.16L17.36 11.82V14.36ZM17.36 5V10.1L15.36 8.1V5H17.36Z M13.36 2H11.36V4H13.36V2Z M9.36 2H7.36V4H9.36V2Z M5.36 2H3.36V4H5.36V2Z"></path></svg>
+                    </button>
+                    <span>Отклонить</span>
+                </div>
+                <div class="action-button-wrapper">
+                    <button id="accept-btn" class="action-btn accept-btn">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.02.74-.25 1.02l-2.2 2.2z"/></svg>
+                    </button>
+                    <span>Принять</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="localAudio" autoplay muted playsinline style="display:none;"></audio>
+    <audio id="remoteAudio" autoplay playsinline></audio>
+
+    <audio id="ringOutAudio" loop src="/static/sounds/ring-out.mp3"></audio>
+    <audio id="connectAudio" src="/static/sounds/connect.mp3"></audio>
+    <audio id="ringInAudio" loop src="/static/sounds/ring-in.mp3"></audio>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
